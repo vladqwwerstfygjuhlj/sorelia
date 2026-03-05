@@ -7,11 +7,12 @@ async function fetchProducts(){
 async function loadProducts(){
   try{
     const data = await fetchProducts();
+    // Цей рядок — ключ до всього. Він бере або data.items, або сам data
+    const list = data && data.items ? data.items : data; 
     
-    const list = data.items || data; 
     window.SORELIA_ALL = Array.isArray(list) ? list : [];
   }catch(e){
-    console.error(e);
+    console.error("Помилка завантаження товарів:", e);
     window.SORELIA_ALL = window.SORELIA_PRODUCTS ?? [];
   }
   return window.SORELIA_ALL;
