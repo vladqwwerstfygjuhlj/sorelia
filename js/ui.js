@@ -1,5 +1,5 @@
 async function fetchProducts(){
-  const r = await fetch("/products.json", { cache: "no-store" });
+  const r = await fetch("products.json", { cache: "no-store" });
   if (!r.ok) throw new Error("Cannot load /products.json");
   return await r.json();
 }
@@ -7,7 +7,6 @@ async function fetchProducts(){
 async function loadProducts(){
   try{
     const data = await fetchProducts();
-    // Цей рядок — ключ до всього. Він бере або data.items, або сам data
     const list = data && data.items ? data.items : data; 
     
     window.SORELIA_ALL = Array.isArray(list) ? list : [];
