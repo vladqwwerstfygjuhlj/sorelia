@@ -15,12 +15,12 @@ collections:
         format: "json"
         fields:
           - name: "items"
-            label: "Товари"
+            label: "Список прикрас"
             widget: "list"
             fields:
-              - { label: "ID", name: "id", widget: "string" }
               - { label: "Назва", name: "name", widget: "string" }
-              - { label: "Ціна", name: "price", widget: "number" }
+              - { label: "Ціна", name: "price", widget: "number", value_type: "int" }
               - { label: "Категорія", name: "category", widget: "string" }
               - { label: "Зображення", name: "image", widget: "image" }
-              - { label: "Опис (mood)", name: "mood", widget: "text" }
+              - { label: "Опис", name: "mood", widget: "text" }
+              - { label: "ID", name: "id", widget: "hidden" }
