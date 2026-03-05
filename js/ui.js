@@ -6,7 +6,9 @@ async function fetchProducts(){
 
 async function loadProducts(){
   try{
-    const list = await fetchProducts();
+    const data = await fetchProducts();
+    
+    const list = data.items || data; 
     window.SORELIA_ALL = Array.isArray(list) ? list : [];
   }catch(e){
     console.error(e);
@@ -56,9 +58,7 @@ function renderGrid(list, mount){
   `).join("");
 }
 }
-// -----------------------------
-// Catalog init
-// -----------------------------
+
 function money(uah){
   return new Intl.NumberFormat("uk-UA").format(uah) + " грн";
 }
