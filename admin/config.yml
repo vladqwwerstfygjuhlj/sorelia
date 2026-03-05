@@ -1,3 +1,10 @@
+backend:
+  name: git-gateway
+  branch: main
+
+media_folder: "assets/img"
+public_folder: "/assets/img"
+
 collections:
   - name: "catalog"
     label: "Каталог"
@@ -11,9 +18,9 @@ collections:
             label: "Товари"
             widget: "list"
             fields:
-              - { label: "ID", name: "id", widget: "hidden" } # Зробимо його прихованим, щоб не було помилок
+              - { label: "ID", name: "id", widget: "string" }
               - { label: "Назва", name: "name", widget: "string" }
-              - { label: "Ціна", name: "price", widget: "string" } # Змінюємо на string для стабільності
+              - { label: "Ціна", name: "price", widget: "number" }
               - { label: "Категорія", name: "category", widget: "string" }
               - { label: "Зображення", name: "image", widget: "image" }
               - { label: "Опис (mood)", name: "mood", widget: "text" }
