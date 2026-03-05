@@ -1,17 +1,24 @@
 async function fetchProducts(){
-  const r = await fetch("products.json", { cache: "no-store" });
-  if (!r.ok) throw new Error("Cannot load /products.json");
+  const r = await fetch("products.json", { cache: "no-store" }); 
+  if (!r.ok) throw new Error("Cannot load products.json");
   return await r.json();
 }
 
 async function loadProducts(){
   try{
     const data = await fetchProducts();
-    const list = data && data.items ? data.items : data; 
+    
+    let list = data && data.items ? data.items : data;
+    
+    while (Array.isArray(list) && list.length > 0 && Array.isArray(list[0])) {
+      list = list[0];
+    }
     
     window.SORELIA_ALL = Array.isArray(list) ? list : [];
+    console.log("Завантажено товарів:", window.SORELIA_ALL.length);
+    
   }catch(e){
-    console.error("Помилка завантаження товарів:", e);
+    console.error("Помилка завантаження:", e);
     window.SORELIA_ALL = window.SORELIA_PRODUCTS ?? [];
   }
   return window.SORELIA_ALL;
