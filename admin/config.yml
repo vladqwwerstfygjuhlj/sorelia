@@ -1,3 +1,10 @@
+backend:
+  name: git-gateway
+  branch: main
+
+media_folder: "assets/img"
+public_folder: "/assets/img"
+
 collections:
   - name: "catalog"
     label: "Каталог"
@@ -5,7 +12,6 @@ collections:
       - label: "Всі товари"
         name: "products"
         file: "products.json"
-        description: "Список усіх прикрас"
         fields:
           - name: "items"
             label: "Товари"
