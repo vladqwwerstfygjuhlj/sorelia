@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>SORELIA — товар</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="icon" href="assets/img/favicon.png" type="image/png">
+<link rel="apple-touch-icon" href="assets/img/favicon.png">
+
+  <link rel="stylesheet" href="css/styles.css"/>
+</head>
+<div class="drawer" id="cartDrawer" aria-hidden="true">
+  <div class="drawer__backdrop" data-close="1"></div>
+
+  <div class="drawer__panel">
+    <div class="drawer__head">
+      <div>
+        <div class="drawer__title">Кошик</div>
+        <div class="small">Тихий вибір. Точні деталі.</div>
+      </div>
+
+      <button class="drawer__close" type="button" data-close="1" aria-label="Закрити">×</button>
+    </div>
+
+    <div class="drawer__body">
+      <div id="cartItems"></div>
+    </div>
+
+    <div class="drawer__foot">
+      <div class="drawer__total">
+        <span class="small">Разом</span>
+        <b id="cartTotal">0 грн</b>
+      </div>
+
+      <div class="toolbar-right">
+        <button class="btn" id="clearCart" type="button">Очистити</button>
+        <button class="btn btn--filled" id="checkoutBtn" type="button">Оформити</button>
+      </div>
+
+      <div class="small" id="cartNote"></div>
+    </div>
+  </div>
+</div>
+<body>
+  <header class="header">
+    <div class="container">
+      <div class="nav">
+        <a class="brand" href="index.html">
+          <div class="brand__name">SORELIA</div>
+          <div class="brand__tag">quiet elegance</div>
+        </a>
+
+        <nav class="menu">
+          <a href="catalog.html">Каталог</a>
+          <a href="about.html">Про бренд</a>
+        </nav>
+
+        <div class="actions">
+          <a class="icon-btn" href="catalog.html">Назад</a>
+          <button class="icon-btn" id="cartBtn" type="button">
+  Кошик <span class="badge" id="cartCount">0</span>
+</button>
+
+        </div>
+      </div>
+    </div>
+    
+
+  </header>
+
+  <main class="main">
+    <div class="container product-page">
+      <div class="gallery">
+        <img id="p-img" src="assets/img/p1.jpg" alt="">
+      </div>
+
+      <div class="card panel">
+        <div class="kicker">SORELIA</div>
+        <h1 class="p-title" id="p-title">—</h1>
+        <p class="p-desc" id="p-mood">—</p>
+
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
+          <div class="price" id="p-price" style="font-size:18px;">—</div>
+          <button class="btn btn--filled" id="add">Додати до кошика</button>
+        </div>
+
+        <div class="small" id="note" style="margin-top:10px; min-height:18px;"></div>
+        <div class="spec" id="p-specs"></div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      Якщо це для подарунка — ми зробимо тихо і красиво.
+    </div>
+  </footer>
+
+  <script src="js/data.js"></script>
+  <script src="js/ui.js"></script>
+  <!-- Mini Cart Drawer -->
+<div class="drawer" id="cartDrawer" aria-hidden="true">
+  <div class="drawer__backdrop" data-close="1"></div>
+
+  <aside class="drawer__panel" role="dialog" aria-modal="true" aria-label="Кошик">
+    <div class="drawer__head">
+      <div>
+        <div class="kicker">кошик</div>
+        <div class="drawer__title">Твої обрані позиції</div>
+      </div>
+      <button class="drawer__close" type="button" data-close="1" aria-label="Закрити">×</button>
+    </div>
+
+    <div class="drawer__body">
+      <div id="cartItems"></div>
+    </div>
+
+    <div class="drawer__foot">
+      <div class="drawer__total">
+        <span class="small">Разом</span>
+        <span class="price" id="cartTotal">—</span>
+      </div>
+
+      <button class="btn btn--filled" id="checkoutBtn" type="button">Оформити</button>
+      <button class="btn" id="clearCart" type="button">Очистити</button>
+
+      <div class="small" id="cartNote" style="min-height:18px;"></div>
+    </div>
+  </aside>
+</div>
+<script src="js/data.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/cart.js"></script>
+</body>
+</html>

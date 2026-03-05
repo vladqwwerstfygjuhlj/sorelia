@@ -1,0 +1,24 @@
+backend:
+  name: git-gateway
+  branch: main # Перевірте, чи ваша гілка називається main, якщо master - змініть
+
+media_folder: "site/assets/img" # Куди зберігати нові фото прикрас
+public_folder: "assets/img"
+
+collections:
+  - name: "inventory"
+    label: "Каталог прикрас"
+    files:
+      - label: "Всі товари"
+        name: "products_list"
+        file: "products.json" # Шлях до вашого файлу з товарами
+        fields:
+          - label: "Товари"
+            name: "products"
+            widget: "list"
+            fields:
+              - { label: "Назва", name: "name", widget: "string" }
+              - { label: "Ціна (грн)", name: "price", widget: "number", value_type: "int" }
+              - { label: "Опис", name: "description", widget: "text" }
+              - { label: "Фото", name: "image", widget: "image" }
+              - { label: "ID", name: "id", widget: "string" }

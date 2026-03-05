@@ -1,0 +1,137 @@
+ <!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>SORELIA — тиха елегантність</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="icon" href="assets/img/favicon.png" type="image/png">
+<link rel="apple-touch-icon" href="assets/img/favicon.png">
+
+  <link rel="stylesheet" href="css/styles.css"/>
+</head>
+<div class="drawer" id="cartDrawer" aria-hidden="true">
+  <div class="drawer__backdrop" data-close="1"></div>
+
+  <div class="drawer__panel">
+    <div class="drawer__head">
+      <div>
+        <div class="drawer__title">Кошик</div>
+        <div class="small">Тихий вибір. Точні деталі.</div>
+      </div>
+
+      <button class="drawer__close" type="button" data-close="1" aria-label="Закрити">×</button>
+    </div>
+
+    <div class="drawer__body">
+      <div id="cartItems"></div>
+    </div>
+
+    <div class="drawer__foot">
+      <div class="drawer__total">
+        <span class="small">Разом</span>
+        <b id="cartTotal">0 грн</b>
+      </div>
+
+      <div class="toolbar-right">
+        <button class="btn" id="clearCart" type="button">Очистити</button>
+        <button class="btn btn--filled" id="checkoutBtn" type="button">Оформити</button>
+      </div>
+
+      <div class="small" id="cartNote"></div>
+    </div>
+  </div>
+</div>
+
+<body>
+  <header class="header">
+    <div class="container">
+      <div class="nav">
+        <a class="brand" href="index.html">
+          <div class="brand__name">SORELIA</div>
+          <div class="brand__tag">quiet elegance</div>
+          
+
+        </a>
+
+        <nav class="menu">
+          <a href="catalog.html">Каталог</a>
+          <a href="about.html">Про бренд</a>
+        </nav>
+
+        <div class="actions">
+          <a class="icon-btn" href="catalog.html">Колекція</a>
+          
+ <button class="icon-btn" id="cartBtn" type="button">
+  Кошик <span class="badge" id="cartCount">0</span>
+</button>
+
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="main">
+    <div class="container hero">
+      <div class="hero__copy card">
+        <div>
+          <div class="kicker">деталі, що відчуваються</div>
+          <h1 class="h1">Тиха елегантність<br/>у сріблі.</h1>
+          <p class="lead">
+            Мінімалістичні прикраси з чистим фокусом на формі.
+Ми працюємо з простими лініями й продуманими пропорціями, залишаючи лише те, що справді має значення.
+Без зайвих акцентів, випадкових деталей і шуму.
+Прикраси, які не привертають увагу навмисно, але відчуваються в образі.
+Без зайвого — лише те, що лишається.
+          </p>
+        </div>
+
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <a class="btn btn--filled" href="catalog.html">Переглянути колекцію</a>
+          <a class="btn" href="about.html">Філософія бренду</a>
+        </div>
+      </div>
+
+      <div class="hero__visual card">
+        <img src="assets/img/hero.png" alt="SORELIA">
+      </div>
+    </div>
+
+    <section class="container section">
+      <div class="section__head">
+      
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      SORELIA — срібні прикраси. Спокійні деталі. ©
+    </div>
+  </footer>
+
+
+  
+      <div class="small" id="cartNote" style="min-height:18px;"></div>
+    </div>
+  </aside>
+</div>
+<script src="js/data.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/cart.js"></script>
+</body>
+<script>
+  if (window.netlifyIdentity) {
+    window.netlifyIdentity.on("init", user => {
+      if (!user) {
+        window.netlifyIdentity.on("login", () => {
+          document.location.href = "/admin/";
+        });
+      }
+    });
+  }
+</script>
+</body>
+</html>

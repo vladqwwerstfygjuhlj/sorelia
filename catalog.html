@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>SORELIA — каталог</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="css/styles.css"/>
+</head>
+<div class="drawer" id="cartDrawer" aria-hidden="true">
+  <div class="drawer__backdrop" data-close="1"></div>
+
+  <div class="drawer__panel">
+    <div class="drawer__head">
+      <div>
+        <div class="drawer__title">Кошик</div>
+        <div class="small">Тихий вибір. Точні деталі.</div>
+      </div>
+
+      <button class="drawer__close" type="button" data-close="1" aria-label="Закрити">×</button>
+    </div>
+
+    <div class="drawer__body">
+      <div id="cartItems"></div>
+    </div>
+
+    <div class="drawer__foot">
+      <div class="drawer__total">
+        <span class="small">Разом</span>
+        <b id="cartTotal">0 грн</b>
+      </div>
+
+      <div class="toolbar-right">
+        <button class="btn" id="clearCart" type="button">Очистити</button>
+        <button class="btn btn--filled" id="checkoutBtn" type="button">Оформити</button>
+      </div>
+
+      <div class="small" id="cartNote"></div>
+    </div>
+  </div>
+</div>
+<body>
+  <header class="header">
+    <div class="container">
+      <div class="nav">
+        <a class="brand" href="index.html">
+          <div class="brand__name">SORELIA</div>
+          <div class="brand__tag">quiet elegance</div>
+        </a>
+
+        <nav class="menu">
+          <a href="catalog.html">Каталог</a>
+          <a href="about.html">Про бренд</a>
+        </nav>
+
+        <div class="actions">
+          <a class="icon-btn" href="index.html">Головна</a>
+          <button class="icon-btn" id="cartBtn" type="button">
+  Кошик <span class="badge" id="cartCount">0</span>
+</button>
+
+        </div>
+      </div>
+    </div>
+    
+
+  </header>
+
+  <main class="main">
+    <div class="container">
+      <div class="section__head" style="margin-bottom:18px;">
+        <div>
+          <h1 class="h2" style="font-size:32px; margin-bottom:6px;">Колекція</h1>
+          <div class="small" id="count">—</div>
+        </div>
+      </div>
+
+      <div class="toolbar-right">
+  <button class="btn" id="filtersBtn" type="button">Фільтри</button>
+
+  <select class="pill" id="sort">
+    <option value="reco">Рекомендовані</option>
+    <option value="priceAsc">Ціна ↑</option>
+    <option value="priceDesc">Ціна ↓</option>
+    <option value="nameAsc">Назва A–Я</option>
+  </select>
+</div>
+
+
+<!-- Filters: simple + stable -->
+<div class="filters-simple" id="filters">
+  <input class="input input--full" id="search" type="search" placeholder="Назва або артикул…" />
+
+  <select class="pill pill--full" id="category">
+    <option value="all">Усі категорії</option>
+    <option value="Каблучки">Каблучки</option>
+    <option value="Сережки">Сережки</option>
+    <option value="Підвіски">Підвіски</option>
+    <option value="Браслети">Браслети</option>
+  </select>
+
+  <!-- Sizes (Pandora) – показуємо тільки якщо вибрані каблучки або all -->
+  <div id="sizesWrap" class="sizes-row" aria-label="Розміри">
+    <button class="chip" type="button" data-size="48">48</button>
+    <button class="chip" type="button" data-size="50">50</button>
+    <button class="chip" type="button" data-size="52">52</button>
+    <button class="chip" type="button" data-size="54">54</button>
+    <button class="chip" type="button" data-size="56">56</button>
+    <button class="chip" type="button" data-size="58">58</button>
+    <button class="chip" type="button" data-size="60">60</button>
+  </div>
+
+  <div class="range">
+    <input class="input" id="minPrice" inputmode="numeric" placeholder="Ціна від" />
+    <input class="input" id="maxPrice" inputmode="numeric" placeholder="до" />
+  </div>
+
+  <div class="filters-actions">
+    <select class="pill pill--full" id="sort">
+      <option value="reco">Рекомендовані</option>
+      <option value="priceAsc">Ціна ↑</option>
+      <option value="priceDesc">Ціна ↓</option>
+      <option value="nameAsc">Назва A→Я</option>
+    </select>
+
+    <button class="btn" id="reset" type="button">Скинути</button>
+  </div>
+
+  <div class="small" id="filtersMeta">—</div>
+</div>
+
+
+
+          <div class="grid" id="grid"></div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      Дивись повільно. Обирай по відчуттю.
+    </div>
+  </footer>
+<!-- Quick View Modal -->
+<div class="modal" id="qvModal" aria-hidden="true">
+  <div class="modal__backdrop" data-close="1"></div>
+
+  <div class="modal__panel" role="dialog" aria-modal="true" aria-label="Quick view">
+    <button class="modal__close" type="button" data-close="1" aria-label="Закрити">×</button>
+
+    <div class="qv">
+      <div class="qv__imgWrap">
+        <img id="qvImg" src="" alt="">
+      </div>
+
+      <div class="qv__info">
+        <div class="kicker">SORELIA</div>
+        <h3 class="qv__title" id="qvTitle">—</h3>
+        <div class="qv__row">
+          <div class="price" id="qvPrice">—</div>
+          <button class="btn btn--filled" id="qvAdd" type="button">Додати до кошика</button>
+        </div>
+
+        <p class="qv__mood" id="qvMood">—</p>
+
+        <div class="qv__sizes" id="qvSizes"></div>
+
+        <div class="qv__links">
+          <a class="btn" id="qvOpen" href="#">Відкрити сторінку</a>
+        
+        <div class="small" id="qvNote" style="min-height:18px;"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+  <script src="js/data.js"></script>
+  <script src="js/ui.js"></script>
+
+      <div class="small" id="cartNote" style="min-height:18px;"></div>
+    </div>
+  </aside>
+</div>
+</body>
+</html>
+
+<script src="js/ui.js"></script>
+<script src="js/cart.js"></script>
+<script>
+  if (window.netlifyIdentity) {
+    window.netlifyIdentity.on("init", user => {
+      if (!user) {
+        window.netlifyIdentity.on("login", () => {
+          document.location.href = "/admin/";
+        });
+      }
+    });
+  }
+</script>
+</body>
