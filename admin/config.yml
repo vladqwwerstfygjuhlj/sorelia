@@ -12,11 +12,11 @@ collections:
       - label: "Всі товари"
         name: "products"
         file: "products.json"
+        format: "json"
         fields:
-          - name: "items"
+          - name: "items" # Ця назва для адмінки, вона "оберне" ваш масив
             label: "Товари"
             widget: "list"
-            summary: '{{fields.name}} - {{fields.price}} грн'
             fields:
               - { label: "ID", name: "id", widget: "string" }
               - { label: "Назва", name: "name", widget: "string" }
