@@ -24,56 +24,42 @@ async function loadProducts(){
   return window.SORELIA_ALL;
 }
 
-async function initCatalog(){
-  const all = await loadProducts();
-  const mount = qs("#grid");
-
-function money(uah){
-  return new Intl.NumberFormat("uk-UA").format(uah) + " грн";
+// 1. Допоміжні функції (мають бути зовні)
+function money(uah) {
+  return new Intl.NumberFormat("uk-UA").format(uah || 0) + " грн";
 }
-function qs(sel){ return document.querySelector(sel); }
 
+function qs(sel) {
+  return document.querySelector(sel);
+}
 
-function renderGrid(list, mount){
-  if (!mount) return;
+// 2. Завантаження товарів
+async function fetchProducts() {
+  // Виправили шлях (без "/")
+  const r = await fetch("products.json", { cache: "no-store" });
+  if (!r.ok) throw new Error("Cannot load products.json");
+  return await r.json();
+}
 
-  if (!list.length){
-    mount.innerHTML = `<div class="small">Нічого не знайдено.</div>`;
-    return;
+async function loadProducts() {
+  try {
+    const data = await fetchProducts();
+    // Витягуємо масив, навіть якщо він в items або вкладений
+    let list = data && data.items ? data.items : data;
+    if (Array.isArray(list) && Array.isArray(list[0])) list = list[0];
+    
+    window.SORELIA_ALL = Array.isArray(list) ? list : [];
+  } catch (e) {
+    console.error("Помилка завантаження:", e);
+    window.SORELIA_ALL = window.SORELIA_PRODUCTS ?? [];
   }
-
-  mount.innerHTML = list.map(p => `
-    <div class="product" data-id="${p.id}">
-      <a href="product.html?id=${encodeURIComponent(p.id)}">
-        <div class="product__img">
-          <img src="${p.image}" alt="${p.name}">
-        </div>
-        <div class="product__body">
-          <p class="product__name">${p.name}</p>
-          <div class="product__meta">
-            <span>${p.category}</span>
-            <span class="price">${money(p.price)}</span>
-          </div>
-        </div>
-      </a>
-
-      <div class="product__actions">
-        <button class="pill-action" data-qv="1" type="button">Переглянути</button>
-        <button class="pill-action pill-action--heart" data-wish="1" type="button" aria-label="Зберегти">♡</button>
-      </div>
-    </div>
-  `).join("");
-}
+  return window.SORELIA_ALL;
 }
 
-function money(uah){
-  return new Intl.NumberFormat("uk-UA").format(uah) + " грн";
-}
-function qs(sel){ return document.querySelector(sel); }
-
-function renderGrid(list, mount){
+// 3. Малювання сітки
+function renderGrid(list, mount) {
   if (!mount) return;
-  if (!list.length){
+  if (!list || !list.length) {
     mount.innerHTML = `<div class="small">Нічого не знайдено.</div>`;
     return;
   }
@@ -88,88 +74,74 @@ function renderGrid(list, mount){
           <p class="product__name">${p.name}</p>
           <div class="product__meta">
             <span>${p.category || ""}</span>
-            <span class="price">${money(p.price || 0)}</span>
+            <span class="price">${money(p.price)}</span>
           </div>
         </div>
       </a>
+      <div class="product__actions">
+        <button class="pill-action" data-qv="1" type="button">Переглянути</button>
+      </div>
     </div>
   `).join("");
 }
 
-async function initCatalog(){
+// 4. Ініціалізація каталогу (фільтри, пошук)
+async function initCatalog() {
   const mount = qs("#grid");
+  if (!mount) return;
 
-  // Беремо масив товарів з API або вже завантажений масив
-  let all = [];
-  try{
-    all = await fetchProducts(); // якщо ти вже зробив fetchProducts() під API
-  }catch(e){
-    all = window.SORELIA_ALL || window.SORELIA_PRODUCTS || [];
-  }
+  let all = await loadProducts();
+  
+  // Якщо loadProducts повернув об'єкт замість масиву (захист)
+  if (all && all.items) all = all.items;
+  if (!Array.isArray(all)) all = [];
 
   const search = qs("#search");
   const cat = qs("#category");
   const sort = qs("#sort");
   const minPrice = qs("#minPrice");
   const maxPrice = qs("#maxPrice");
-  const reset = qs("#reset");
-  const sizesWrap = qs("#sizesWrap");
   const meta = qs("#filtersMeta");
 
-  let activeSize = null;
-
-  function apply(){
+  function apply() {
     const term = (search?.value ?? "").trim().toLowerCase();
     const chosen = cat?.value ?? "all";
     const min = parseInt(minPrice?.value || "", 10);
     const max = parseInt(maxPrice?.value || "", 10);
     const sortBy = sort?.value ?? "reco";
 
-    let list = all.slice();
+    let list = [...all];
 
-    // category
-    if (chosen !== "all") list = list.filter(p => (p.category || "") === chosen);
-
-    // search
-    if (term){
-      list = list.filter(p =>
-        (p.name || "").toLowerCase().includes(term) ||
-        (p.sku || "").toLowerCase().includes(term)
+    if (chosen !== "all") list = list.filter(p => p.category === chosen);
+    if (term) {
+      list = list.filter(p => 
+        (p.name || "").toLowerCase().includes(term) || 
+        (p.id || "").toLowerCase().includes(term)
       );
     }
+    if (!isNaN(min)) list = list.filter(p => p.price >= min);
+    if (!isNaN(max)) list = list.filter(p => p.price <= max);
 
-    // price
-    if (!Number.isNaN(min)) list = list.filter(p => (p.price ?? 0) >= min);
-    if (!Number.isNaN(max)) list = list.filter(p => (p.price ?? 0) <= max);
-
-    // size (Pandora) – тільки для каблучок (або all)
-    const sizeEnabled = (chosen === "all" || chosen === "Каблучки");
-    if (!sizeEnabled){
-      activeSize = null;
-      if (sizesWrap){
-        [...sizesWrap.querySelectorAll("[data-size]")].forEach(x => x.classList.remove("is-active"));
-      }
-    }
-
-    if (activeSize && sizeEnabled){
-      list = list.filter(p => (p.sizes || []).map(String).includes(String(activeSize)));
-    }
-
-    // sort
-    if (sortBy === "priceAsc") list.sort((a,b) => (a.price ?? 0) - (b.price ?? 0));
-    if (sortBy === "priceDesc") list.sort((a,b) => (b.price ?? 0) - (a.price ?? 0));
-    if (sortBy === "nameAsc") list.sort((a,b) => (a.name||"").localeCompare(b.name||"", "uk"));
+    if (sortBy === "priceAsc") list.sort((a,b) => a.price - b.price);
+    if (sortBy === "priceDesc") list.sort((a,b) => b.price - a.price);
 
     renderGrid(list, mount);
-
-    if (meta){
-      const bits = [];
-      bits.push(`${list.length} позицій`);
-      if (chosen !== "all") bits.push(chosen);
-      if (activeSize) bits.push(`розмір ${activeSize}`);
-      meta.textContent = bits.length ? bits.join(" · ") : "—";
-    }
+    if (meta) meta.textContent = `${list.length} позицій`;
   }
+
+  // Слухачі подій
+  [search, cat, sort, minPrice, maxPrice].forEach(el => {
+    el?.addEventListener("input", apply);
+  });
+
+  // Перший запуск
+  apply();
+}
+
+// Запуск при завантаженні сторінки
+document.addEventListener("DOMContentLoaded", () => {
+  initCatalog();
+});
 
   // sizes clicks
   if (sizesWrap){
@@ -213,9 +185,6 @@ async function initCatalog(){
   }
 
   apply();
-}
-
-
 // -----------------------------
 // Product page init
 // -----------------------------
