@@ -6,226 +6,298 @@
   let PRODUCTS = [];
   let started = false;
 
-  // ---------- helpers ----------
+  // ---------- Helpers ----------
   const qs = (s, r = document) => r.querySelector(s);
-  const money = (uah) => new Intl.NumberFormat("uk-UA").format(uah) + " грн";
+  const money = (uah) => new Intl.NumberFormat("uk-UA").format(uah || 0) + " грн";
 
-  function readCart(){
+  function readCart() {
     try { return JSON.parse(localStorage.getItem(CART_KEY) || "[]"); }
     catch { return []; }
   }
-  function writeCart(items){
+
+  function writeCart(items) {
     localStorage.setItem(CART_KEY, JSON.stringify(items));
   }
 
-  function countCart(){
+  function countCart() {
     return readCart().reduce((sum, it) => sum + (it.qty || 0), 0);
   }
-  function totalCart(){
-    const cart = readCart();
-    let sum = 0;
-    for (const it of cart){
-      const p = PRODUCTS.find(x => x.id === it.id);
-      if (p) sum += (p.price || 0) * (it.qty || 0);
+
+  async function loadProducts() {
+    if (Array.isArray(window.SORELIA_ALL) && window.SORELIA_ALL.length) {
+      PRODUCTS = window.SORELIA_ALL;
+      return PRODUCTS;
     }
-    return sum;
+
+    try {
+      const response = await fetch("products.json", { cache: "no-store" });
+      const data = await response.json();
+      PRODUCTS = Array.isArray(data?.items) ? data.items : Array.isArray(data) ? data : [];
+      window.SORELIA_ALL = PRODUCTS;
+    } catch (error) {
+      console.error("Не вдалося завантажити products.json:", error);
+      PRODUCTS = [];
+    }
+    return PRODUCTS;
   }
 
-  function add(id, qty = 1){
+  // ---------- Core Logic ----------
+
+  // Оновлена функція додавання з підтримкою розміру
+  function add(id, qty = 1, size = null) {
     const cart = readCart();
-    const row = cart.find(x => x.id === id);
-    if (row) row.qty += qty;
-    else cart.push({ id, qty });
-    // чистимо нулі
-    const cleaned = cart.filter(x => x.qty > 0);
-    writeCart(cleaned);
+    // Шукаємо товар за ID та РОЗМІРОМ
+    const row = cart.find(x => x.id === id && x.size === size);
+    if (row) {
+      row.qty += qty;
+    } else {
+      cart.push({ id, qty, size, addedAt: Date.now() });
+    }
+    writeCart(cart);
   }
 
-  function inc(id){ add(id, 1); }
-  function dec(id){
+  function inc(id, size = null) {
     const cart = readCart();
-    const row = cart.find(x => x.id === id);
-    if (!row) return;
-    row.qty -= 1;
-    writeCart(cart.filter(x => x.qty > 0));
+    const row = cart.find(x => x.id === id && x.size === size);
+    if (row) row.qty++;
+    writeCart(cart);
   }
 
-  function remove(id){
-    writeCart(readCart().filter(x => x.id !== id));
+  function dec(id, size = null) {
+    const cart = readCart();
+    const row = cart.find(x => x.id === id && x.size === size);
+    if (row && row.qty > 1) row.qty--;
+    else if (row) return remove(id, size);
+    writeCart(cart);
   }
 
-  function clear(){
-    writeCart([]);
+  function remove(id, size = null) {
+    let cart = readCart();
+    cart = cart.filter(x => !(x.id === id && x.size === size));
+    writeCart(cart);
   }
 
-  function setBadge(){
-    const el = qs("#cartCount");
-    if (!el) return;
-    el.textContent = String(countCart());
+  // ---------- UI & Rendering ----------
+
+  function setBadge() {
+    const b = qs("#cartCount");
+    if (!b) return;
+    const c = countCart();
+    b.textContent = c;
+    b.style.display = c > 0 ? "flex" : "none";
   }
 
-  // ---------- drawer UI ----------
-  function openDrawer(){
-    const drawer = qs("#cartDrawer");
-    if (!drawer) return;
-    drawer.classList.add("is-open");
-    drawer.setAttribute("aria-hidden", "false");
-    document.body.style.overflow = "hidden";
-  }
-
-  function closeDrawer(){
-    const drawer = qs("#cartDrawer");
-    if (!drawer) return;
-    drawer.classList.remove("is-open");
-    drawer.setAttribute("aria-hidden", "true");
-    document.body.style.overflow = "";
-  }
-
-  function render(){
-    const itemsMount = qs("#cartItems");
-    const totalMount = qs("#cartTotal");
-    if (!itemsMount || !totalMount) return;
+  function render() {
+    const container = qs("#cartItems");
+    if (!container) return;
 
     const cart = readCart();
-
-    if (!cart.length){
-      itemsMount.innerHTML = `<div class="small">Поки порожньо. Можеш просто переглянути колекцію.</div>`;
-      totalMount.textContent = money(0);
+    if (!cart.length) {
+      container.innerHTML = `<div style="padding:40px 20px; text-align:center; opacity:0.5;">Кошик порожній</div>`;
+      if (qs("#cartTotal")) qs("#cartTotal").textContent = "0 грн";
       return;
     }
 
-    itemsMount.innerHTML = cart.map(it => {
-      const p = PRODUCTS.find(x => x.id === it.id);
-      if (!p) return "";
-      const line = (p.price || 0) * (it.qty || 0);
+    const items = PRODUCTS.length ? PRODUCTS : window.SORELIA_ALL || [];
+    let total = 0;
+
+    container.innerHTML = cart.map(it => {
+      const p = items.find(x => x.id === it.id) || {};
+      const price = p.price || 0;
+      total += price * it.qty;
 
       return `
-        <div class="cart-item" data-id="${p.id}">
-          <div class="cart-item__img">
-            <img src="${p.image}" alt="${p.name}">
+        <div class="cart-item" data-id="${it.id}" data-size="${it.size || ''}">
+          <img src="${p.image || ''}" alt="" class="cart-item__img">
+          <div class="cart-item__info">
+            <div class="cart-item__name">${p.name || 'Прикраса'}</div>
+            ${it.size ? `<div class="small" style="color:var(--muted)">Розмір: ${it.size}</div>` : ''}
+            <div class="cart-item__price">${money(price)}</div>
           </div>
-
-          <div>
-            <p class="cart-item__name">${p.name}</p>
-            <div class="cart-item__meta">
-              <span>${money(p.price)}</span>
-              <span class="qty">
-                <button type="button" data-cart-dec="1">−</button>
-                <span>${it.qty}</span>
-                <button type="button" data-cart-inc="1">+</button>
-              </span>
-            </div>
-            <div class="small" style="margin-top:6px;">${money(line)}</div>
+          <div class="cart-item__ctrl">
+            <button class="btn-qty" data-cart-dec="1">-</button>
+            <span>${it.qty}</span>
+            <button class="btn-qty" data-cart-inc="1">+</button>
+            <button class="btn-rm" data-cart-rm="1">×</button>
           </div>
-
-          <button class="remove" type="button" data-cart-rm="1" aria-label="Видалити">×</button>
         </div>
       `;
     }).join("");
 
-    totalMount.textContent = money(totalCart());
+    if (qs("#cartTotal")) qs("#cartTotal").textContent = money(total);
   }
 
-  // ---------- public API for your UI ----------
-  // You can call window.SoreliaCart.addToCart(id) from product page or quick view.
-  function addToCart(id, qty = 1){
-    add(id, qty);
-    setBadge();
-    const btn = document.querySelector("#cartBtn");
-btn?.classList.add("bump");
-setTimeout(() => btn.classList.remove("bump"), 260);
+  function ensureCheckoutForm() {
+    const drawerFoot = qs("#cartDrawer .drawer__foot");
+    if (!drawerFoot || qs("#checkoutForm", drawerFoot)) return;
 
-    // якщо drawer відкритий — оновимо
-    const drawer = qs("#cartDrawer");
-    if (drawer && drawer.classList.contains("is-open")) render();
+    const form = document.createElement("form");
+    form.id = "checkoutForm";
+    form.name = "sorelia-checkout";
+    form.method = "POST";
+    form.setAttribute("data-netlify", "true");
+    form.setAttribute("netlify-honeypot", "bot-field");
+    form.innerHTML = `
+      <input type="hidden" name="form-name" value="sorelia-checkout">
+      <input type="hidden" name="cart_items" id="checkoutCartItems">
+      <p style="display:none;">
+        <label>Don't fill this out: <input name="bot-field"></label>
+      </p>
+      <div class="small" style="margin-top:10px;">Оформлення замовлення</div>
+      <input class="input input--full" type="text" name="full_name" placeholder="Повне ім'я" required style="margin-top:8px;">
+      <input class="input input--full" type="text" name="nova_poshta_address" placeholder="Адреса Нової Пошти" required style="margin-top:8px;">
+      <select class="pill pill--full" name="payment_method" required style="margin-top:8px;">
+        <option value="">Спосіб оплати</option>
+        <option value="Післяплата">Післяплата</option>
+        <option value="Оплата карткою">Оплата карткою</option>
+      </select>
+    `;
+    drawerFoot.appendChild(form);
   }
 
-  // ---------- boot ----------
-  async function loadProducts(){
-    // 1) якщо є SORELIA_ALL (з API) — беремо
-    if (Array.isArray(window.SORELIA_ALL) && window.SORELIA_ALL.length) return window.SORELIA_ALL;
-
-    // 2) якщо є SORELIA_PRODUCTS (fallback) — беремо
-    if (Array.isArray(window.SORELIA_PRODUCTS) && window.SORELIA_PRODUCTS.length) return window.SORELIA_PRODUCTS;
-
-    return [];
+  function buildCheckoutPayload() {
+    const cart = readCart();
+    const items = PRODUCTS.length ? PRODUCTS : window.SORELIA_ALL || [];
+    return cart
+      .map((entry) => {
+        const product = items.find((p) => p.id === entry.id) || {};
+        return {
+          id: entry.id,
+          name: product.name || "Невідомий товар",
+          price: product.price || 0,
+          qty: entry.qty || 0,
+          size: entry.size || null,
+          image: product.image || "",
+        };
+      })
+      .filter((row) => row.qty > 0);
   }
 
-  async function start(){
-    if (started) return; // захист від подвійного старту
+  // ---------- Drawer Management ----------
+
+  function openDrawer() {
+    const d = qs("#cartDrawer");
+    if (!d) return;
+    render();
+    d.classList.add("is-open");
+    d.setAttribute("aria-hidden", "false");
+    document.body.style.overflow = "hidden";
+  }
+
+  function closeDrawer() {
+    const d = qs("#cartDrawer");
+    if (!d) return;
+    d.classList.remove("is-open");
+    d.setAttribute("aria-hidden", "true");
+    document.body.style.overflow = "";
+  }
+
+  // ---------- Global Events ----------
+
+  async function init() {
+    if (started) return;
     started = true;
 
-    PRODUCTS = await loadProducts();
-
+    await loadProducts();
+    ensureCheckoutForm();
     setBadge();
 
-    // відкрити кошик
-    const cartBtn = qs("#cartBtn");
-    if (cartBtn){
-      cartBtn.addEventListener("click", () => {
-        render();
+    document.addEventListener("click", (e) => {
+      // 1. Відкрити кошик
+      if (e.target.closest("#cartBtn")) {
         openDrawer();
-      }, { once: false });
-    }
+        return;
+      }
 
-    // clear
-    const clearBtn = qs("#clearCart");
-    if (clearBtn){
-      clearBtn.addEventListener("click", () => {
-        clear();
+      // 2. Закрити кошик (через фон або кнопку X)
+      if (e.target.dataset.close) {
+        closeDrawer();
+        return;
+      }
+
+      // 3. Кнопка "Додати" на сторінці товару
+      const productAddBtn = e.target.closest("#add");
+      if (productAddBtn) {
+        const params = new URLSearchParams(window.location.search);
+        const id = params.get('id');
+        const size = window.selectedSize || null;
+        if (id) {
+          add(id, 1, size);
+          setBadge();
+          const note = qs("#note");
+          if (note) {
+            note.textContent = size ? `Додано (р. ${size})` : "Додано!";
+            setTimeout(() => note.textContent = "", 2000);
+          }
+        }
+        return;
+      }
+
+      // 4. Кнопки в кошику (делегування)
+      const row = e.target.closest(".cart-item");
+      if (row) {
+        const id = row.dataset.id;
+        const size = row.dataset.size || null;
+
+        if (e.target.closest("[data-cart-inc]")) inc(id, size);
+        if (e.target.closest("[data-cart-dec]")) dec(id, size);
+        if (e.target.closest("[data-cart-rm]")) remove(id, size);
+        
         setBadge();
         render();
-        const note = qs("#cartNote");
-        if (note){
-          note.textContent = "Очищено.";
-          setTimeout(() => note.textContent = "", 1500);
+        return;
+      }
+
+      // 5. Очистити кошик
+      if (e.target.id === "clearCart") {
+        writeCart([]);
+        setBadge();
+        render();
+      }
+
+      // 6. Оформити замовлення
+      if (e.target.id === "checkoutBtn") {
+        const form = qs("#checkoutForm");
+        if (!form) return;
+        const payload = buildCheckoutPayload();
+        if (!payload.length) return alert("Кошик порожній");
+        const hidden = qs("#checkoutCartItems");
+        if (hidden) hidden.value = JSON.stringify(payload, null, 2);
+        form.requestSubmit();
+        return;
+      }
+    });
+
+    const checkoutForm = qs("#checkoutForm");
+    if (checkoutForm) {
+      checkoutForm.addEventListener("submit", (event) => {
+        const payload = buildCheckoutPayload();
+        if (!payload.length) {
+          event.preventDefault();
+          alert("Кошик порожній");
+          return;
         }
+        const hidden = qs("#checkoutCartItems");
+        if (hidden) hidden.value = JSON.stringify(payload, null, 2);
       });
     }
 
-    // close handlers + qty handlers (delegation)
-    document.addEventListener("click", (e) => {
-      // close by backdrop/close button
-      if (e.target && e.target.dataset && e.target.dataset.close){
-        closeDrawer();
-        return;
-      }
-
-      // add to cart from any button with [data-add]
-      const addBtn = e.target.closest("[data-add]");
-      if (addBtn){
-        const id = addBtn.dataset.id;
-        if (id) addToCart(id, 1);
-        return;
-      }
-
-      // cart inc/dec/rm
-      const row = e.target.closest(".cart-item");
-      if (!row) return;
-      const id = row.dataset.id;
-
-      if (e.target.closest("[data-cart-inc]")){
-        inc(id); setBadge(); render(); return;
-      }
-      if (e.target.closest("[data-cart-dec]")){
-        dec(id); setBadge(); render(); return;
-      }
-      if (e.target.closest("[data-cart-rm]")){
-        remove(id); setBadge(); render(); return;
-      }
-    });
-
-    // esc close
+    // ESC close
     document.addEventListener("keydown", (e) => {
-      const drawer = qs("#cartDrawer");
-      if (e.key === "Escape" && drawer && drawer.classList.contains("is-open")){
-        closeDrawer();
-      }
+      if (e.key === "Escape") closeDrawer();
     });
-
-    // expose
-    window.SoreliaCart = { addToCart, open: () => { render(); openDrawer(); }, close: closeDrawer, setBadge };
   }
 
-  document.addEventListener("DOMContentLoaded", start);
+  // Запуск
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init);
+  } else {
+    init();
+  }
+
+  // Експорт функцій для каталогу та QuickView
+  window.addToCart = add;
+  window.openCart = openDrawer;
+  window.updateCartBadge = setBadge;
+
 })();
