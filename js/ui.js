@@ -1,5 +1,4 @@
-const qs = (selector) => document.querySelector(selector);
-
+window.qs = window.qs || ((selector) => document.querySelector(selector));
 function money(uah) {
   return `${new Intl.NumberFormat("uk-UA").format(uah || 0)} грн`;
 }
@@ -30,10 +29,13 @@ async function loadProducts() {
 }
 
 function resolveProductByParam(products, idParam) {
+  if (!products || !Array.isArray(products)) return null;
   const asNumber = Number(idParam);
   if (Number.isInteger(asNumber) && asNumber > 0) {
-    return products.find((p) => p._numId === asNumber) || null;
+    const foundByNum = products.find((p) => p._numId === asNumber);
+    if (foundByNum) return foundByNum;
   }
+
   return products.find((p) => String(p.id) === String(idParam)) || null;
 }
 
@@ -86,8 +88,10 @@ function initCatalog(products) {
     const term = (search?.value || "").trim().toLowerCase();
     const chosenCategory = category?.value || "all";
     const sortMode = sort?.value || "reco";
-    const min = Number(minPrice?.value || "");
-    const max = Number(maxPrice?.value || "");
+    
+    // Виправлені рядки:
+    const min = minPrice?.value ? Number(minPrice.value) : 0;
+    const max = maxPrice?.value ? Number(maxPrice.value) : Infinity;
 
     let list = [...products];
 
@@ -275,7 +279,7 @@ function renderProductDetails(product) {
   if (addBtn) {
     addBtn.addEventListener("click", () => {
       if (typeof window.addToCart !== "function") return;
-      window.addToCart(product.id, 1, selectedSize);
+      window.addToCart(product, 1, selectedSize);
       if (typeof window.updateCartBadge === "function") window.updateCartBadge();
       if (note) {
         note.textContent = selectedSize ? `Додано (р. ${selectedSize}).` : "Додано до кошика.";
@@ -305,6 +309,4 @@ document.addEventListener("DOMContentLoaded", async () => {
   initQuickView(products);
   initProductPage(products);
   if (typeof window.updateCartBadge === "function") window.updateCartBadge();
-});
-
-
+});  

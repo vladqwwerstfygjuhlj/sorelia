@@ -7,7 +7,6 @@
   let started = false;
 
   // ---------- Helpers ----------
-  const qs = (s, r = document) => r.querySelector(s);
   const money = (uah) => new Intl.NumberFormat("uk-UA").format(uah || 0) + " грн";
 
   function readCart() {
@@ -44,17 +43,34 @@
   // ---------- Core Logic ----------
 
   // Оновлена функція додавання з підтримкою розміру
-  function add(id, qty = 1, size = null) {
-    const cart = readCart();
-    // Шукаємо товар за ID та РОЗМІРОМ
-    const row = cart.find(x => x.id === id && x.size === size);
-    if (row) {
-      row.qty += qty;
-    } else {
-      cart.push({ id, qty, size, addedAt: Date.now() });
-    }
-    writeCart(cart);
+function add(product, qty = 1, size = null) {
+  // 1. ПЕРЕВІРКА: Не додаємо товар, якщо немає ID або ціни
+  if (!product || !product.id || product.price === 0) {
+    console.warn("Спроба додати некоректний товар");
+    return;
   }
+
+  const cart = readCart();
+  
+  // 2. ПОШУК: Шукаємо за ID та розміром
+  const row = cart.find(x => x.id === product.id && x.size === size);
+  
+  if (row) {
+    row.qty += qty;
+  } else {
+    // 3. ЗБЕРЕЖЕННЯ: Краще зберігати базові дані відразу
+    cart.push({ 
+      id: product.id, 
+      name: product.name, // додаємо назву
+      price: product.price, // додаємо ціну
+      image: product.image, // додаємо шлях до фото
+      qty, 
+      size, 
+      addedAt: Date.now() 
+    });
+  }
+  writeCart(cart);
+}
 
   function inc(id, size = null) {
     const cart = readCart();
@@ -92,14 +108,16 @@
     if (!container) return;
 
     const cart = readCart();
-    if (!cart.length) {
-      container.innerHTML = `<div style="padding:40px 20px; text-align:center; opacity:0.5;">Кошик порожній</div>`;
-      if (qs("#cartTotal")) qs("#cartTotal").textContent = "0 грн";
-      return;
-    }
-
     const items = PRODUCTS.length ? PRODUCTS : window.SORELIA_ALL || [];
     let total = 0;
+
+    if (!cart.length) {
+      container.innerHTML = `<div style="padding:40px 20px; text-align:center; opacity:0.5;">Кошик порожній</div>`;
+      const zero = money(0);
+      if (qs("#cartTotal")) qs("#cartTotal").textContent = zero;
+      if (qs("#cartTotalForm")) qs("#cartTotalForm").textContent = zero;
+      return;
+    }
 
     container.innerHTML = cart.map(it => {
       const p = items.find(x => x.id === it.id) || {};
@@ -124,10 +142,12 @@
       `;
     }).join("");
 
-    if (qs("#cartTotal")) qs("#cartTotal").textContent = money(total);
+    const finalPrice = money(total);
+    if (qs("#cartTotal")) qs("#cartTotal").textContent = finalPrice;
+    if (qs("#cartTotalForm")) qs("#cartTotalForm").textContent = finalPrice;
   }
 
-  function ensureCheckoutForm() {
+function ensureCheckoutForm() {
     const drawerFoot = qs("#cartDrawer .drawer__foot");
     if (!drawerFoot || qs("#checkoutForm", drawerFoot)) return;
 
@@ -140,17 +160,30 @@
     form.innerHTML = `
       <input type="hidden" name="form-name" value="sorelia-checkout">
       <input type="hidden" name="cart_items" id="checkoutCartItems">
+      
       <p style="display:none;">
         <label>Don't fill this out: <input name="bot-field"></label>
       </p>
-      <div class="small" style="margin-top:10px;">Оформлення замовлення</div>
-      <input class="input input--full" type="text" name="full_name" placeholder="Повне ім'я" required style="margin-top:8px;">
-      <input class="input input--full" type="text" name="nova_poshta_address" placeholder="Адреса Нової Пошти" required style="margin-top:8px;">
-      <select class="pill pill--full" name="payment_method" required style="margin-top:8px;">
-        <option value="">Спосіб оплати</option>
-        <option value="Післяплата">Післяплата</option>
-        <option value="Оплата карткою">Оплата карткою</option>
+      
+      <div class="small" style="margin-top:10px; font-weight: 600;">Оформлення замовлення</div>
+      
+      <input class="input input--full" type="text" name="full_name" placeholder="Прізвище та ім'я" required style="margin-top:8px;">
+      
+      <input class="input input--full" type="tel" name="phone" placeholder="+380 _________" required style="margin-top:8px;">
+      
+      <input class="input input--full" type="text" name="nova_poshta" placeholder="Місто та № відділення НП" required style="margin-top:8px;">
+      
+      <select class="pill pill--full" name="payment_method" required style="margin-top:8px; border: 1px solid var(--accent);">
+        <option value="Оплата карткою">Повна оплата на картку</option>
       </select>
+      
+      <div id="totalToPay" style="margin-top:12px; font-weight:bold; color:var(--accent);">
+        До сплати: <span id="cartTotalForm">0 грн</span>
+      </div>
+      
+      <div class="small" style="margin-top:5px; opacity:0.7; font-size: 0.8em;">
+        * Після оформлення ми надішлемо реквізити для оплати в обраний месенджер.
+      </div>
     `;
     drawerFoot.appendChild(form);
   }
